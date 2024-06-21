@@ -41,28 +41,57 @@ app.get('/send/:item', async (req, res) => {
         }
     });
     
-  });
-
-app.get('/items', async (req, res) => {
-  return res.json(items); // Get all items
 });
 
-app.get('/items/:id', async (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = items.find(item => item.id === id);
-  if (item) {
-    return res.json(item); // Get item by ID
-  } else {
-    return res.status(404).send('Item not found'); // Error handling for non-existent item
-  }
+app.post('/jobs', async (req, res) => {
+
+    // Accessing the X-API-Key header (case-insensitive)
+    if (req.headers['x-api-key']) {
+        const apiKey = req.headers['x-api-key'];
+
+        // Logic to validate the API key (replace with your validation logic)
+        if (apiKey === 'my_valid_api_key') {
+            const recipe = req.params.recipe || {};
+            console.log(recipe);
+        
+            const sendMessageParams = {
+                QueueUrl: process.env.QUEUE_URL,
+                MessageBody: recipe,
+            };
+              
+            sqs.sendMessage(sendMessageParams, (err, data) => {
+                if (err) {
+                  console.error('\nError sending message to SQS:', err);
+                  return res.status(500).json({success: false, code: err.code});
+                } else {
+                  console.log('\nMessage sent to SQS:', data.MessageId);
+                  return res.status(202).json({success: true, code: "queued", item: data.MessageId}); 
+                }
+            });
+        } else {
+            return res.status(401).send('Unauthorized: Invalid X-API-Key');
+        }
+    } else {
+        return res.status(401).send('Unauthorized: Missing X-API-Key header');
+    }
+    
 });
 
-// Example POST route (replace with your logic)
-app.post('/items', (req, res) => {
-  const newItem = req.body; // Assuming request body contains new item data
-  // Implement logic to validate and save the new item to your data source (e.g., database)
-  items.push(newItem); // Simulate adding to sample data (replace with actual saving logic)
-  res.json(newItem); // Send the newly created item
+app.get('/jobs', async (req, res) => {
+    console.log('get list of jobs');
+    return res.json(items); // Get all items
+});
+
+app.get('/jobs/:id', async (req, res) => {
+    console.log('get job details');
+
+    const id = parseInt(req.params.id);
+    const item = items.find(item => item.id === id);
+    if (item) {
+        return res.json(item); // Get item by ID
+    } else {
+        return res.status(404).send('Item not found'); // Error handling for non-existent item
+    }
 });
 
 // Port to listen on (default: 3000)
