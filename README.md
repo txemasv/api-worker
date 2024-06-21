@@ -12,6 +12,11 @@
 + Continuously checks for and processes messages from an SQS queue.
 + This function might be executed in background in a differend deployment.
 
+# webhook
++ Endpoint that handles the final result of the operation.
++ The action started in the producer and was processed by the consumer.
++ At this stage the consumer has completed the job and notifies the final result to this webhook.
+
 # environment
 + AWS_ACCESS_KEY_ID="xxx"
 + AWS_SECRET_ACCESS_KEY="xxx"
