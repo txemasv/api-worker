@@ -20,3 +20,14 @@
 + SQS_VERSION="v1"
 + API_KEY="xxx"
 + LISTEN_INTERVAL_MS=5000
+
+# advices
++ Use a tool like postman to do the POST request with the payload
+
+# message type
+{
+    "recipe": {
+        "message": "hello",
+        "webhook": "http://localhost:3000/notifications"
+    }
+}

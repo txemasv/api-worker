@@ -72,6 +72,8 @@ app.post('/jobs', async (req, res) => { //Producer
         if (apiKey === process.env.API_KEY) {
             const recipe = req.body.recipe;
 
+            // Validate the recipe. 
+            // Add any validation you consider
             if (!recipe.hasOwnProperty('webhook')) {
                 console.error('\nPRODUCER: No webhook provided');
                 return res.status(500).json({
