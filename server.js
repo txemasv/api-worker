@@ -14,8 +14,10 @@ const sqs = new AWS.SQS({
 
 /**
  * Continuously checks for and processes messages from an SQS queue.
+ * This function should be executed in background in a differend deployment.
+ * Producer and Consumer actions are together in this project for learning purposes.
  */
-const listen = () => {
+const listen = () => { //Consumer
     sqs.receiveMessage({
         QueueUrl: process.env.SQS_QUEUE_URL,
         MaxNumberOfMessages: 1, // Get at most one message
@@ -25,7 +27,7 @@ const listen = () => {
     .then(data => {
         if (data.Messages && data.Messages.length > 0) {
             const message = data.Messages[0];
-            const messageBody = message.Body;
+            const messageBody = JSON.parse(message.Body);
         
             // Process the message body here (e.g., parse JSON, perform actions)
             console.log('\nMessage received:', messageBody);
@@ -44,9 +46,14 @@ const listen = () => {
     });
 };
 
-app.post('/jobs', async (req, res) => {
-
-    // Accessing the X-API-Key header (case-insensitive)
+/**
+ * This function acts as an API endpoint for submitting jobs or tasks to a designated SQS queue.
+ * It performs API key validation for security.
+ * Sends the job data as a message to the SQS queue for asynchronous processing.
+ * Client acknowledges successful queuing with an appropriate status code and the message ID.
+ */
+app.post('/jobs', async (req, res) => { //Producer
+    // Accessing the x-api-key header (case-insensitive)
     if (req.headers['x-api-key']) {
         const apiKey = req.headers['x-api-key'];
 
@@ -56,7 +63,7 @@ app.post('/jobs', async (req, res) => {
         
             const sendMessageParams = {
                 QueueUrl: process.env.SQS_QUEUE_URL,
-                MessageBody: recipe,
+                MessageBody: JSON.stringify(recipe),
             };
               
             sqs.sendMessage(sendMessageParams, (err, data) => {
@@ -89,37 +96,6 @@ app.post('/jobs', async (req, res) => {
             status: 'error',
             code: 'Unauthorized: Missing X-API-Key header'
         });
-    }
-    
-});
-
-app.get('/jobs', async (req, res) => {
-
-    // Sample data (replace with your data source, e.g., database connection)
-    const items = [
-        { id: 1, name: 'Item 1' },
-        { id: 2, name: 'Item 2' },
-    ];
-
-    console.log('get list of jobs');
-    return res.json(items); // Get all items
-});
-
-app.get('/jobs/:id', async (req, res) => {
-    console.log('get job details');
-
-    // Sample data (replace with your data source, e.g., database connection)
-    const items = [
-        { id: 1, name: 'Item 1' },
-        { id: 2, name: 'Item 2' },
-    ];
-
-    const id = parseInt(req.params.id);
-    const item = items.find(item => item.id === id);
-    if (item) {
-        return res.json(item); // Get item by ID
-    } else {
-        return res.status(404).send('Item not found'); // Error handling for non-existent item
     }
 });
   

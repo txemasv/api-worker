@@ -8,3 +8,4 @@ SQS_QUEUE_URL="https://sqs.ap-southeast-2.amazonaws.com/xxx/worker-jobs"
 SQS_REGION="ap-southeast-2"
 SQS_VERSION="v1"
 API_KEY="xxx"
+LISTEN_INTERVAL_MS=5000
