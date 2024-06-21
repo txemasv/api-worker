@@ -18,32 +18,6 @@ const items = [
   { id: 2, name: 'Item 2' },
 ];
 
-// Middleware (optional)
-// app.use(express.json()); // Parse incoming JSON data
-
-// Routes
-app.get('/send/:item', async (req, res) => {
-
-    const item = req.params.item;
-    console.log(item);
-
-    const sendMessageParams = {
-        QueueUrl: process.env.SQS_QUEUE_URL,
-        MessageBody: item,
-    };
-      
-    sqs.sendMessage(sendMessageParams, (err, data) => {
-        if (err) {
-          console.error('\nError sending message to SQS:', err);
-          return res.status(500).json({success: false, code: "fail"});
-        } else {
-          console.log('\nMessage sent to SQS:', data.MessageId);
-          return res.status(202).json({success: true, code: "queued", item: data.MessageId}); 
-        }
-    });
-    
-});
-
 app.post('/jobs', async (req, res) => {
 
     // Accessing the X-API-Key header (case-insensitive)
@@ -62,18 +36,34 @@ app.post('/jobs', async (req, res) => {
               
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
-                  console.error('\nError sending message to SQS:', err);
-                  return res.status(500).json({success: false, code: err.code});
+                    console.error('\nError sending message to SQS:', err);
+                    return res.status(500).json({
+                        success: false, 
+                        status: "error",
+                        code: err.code
+                    });
                 } else {
-                  console.log('\nMessage sent to SQS:', data.MessageId);
-                  return res.status(202).json({success: true, code: "queued", item: data.MessageId}); 
+                    console.log('\nMessage sent to SQS:', data.MessageId);
+                    return res.status(202).json({
+                        success: true, 
+                        status: "queued", 
+                        code: data.MessageId
+                    }); 
                 }
             });
         } else {
-            return res.status(401).send('Unauthorized: Invalid X-API-Key');
+            return res.status(401).send({
+                success: false,
+                status: 'error',
+                code: 'Unauthorized: Invalid X-API-Key'
+            });
         }
     } else {
-        return res.status(401).send('Unauthorized: Missing X-API-Key header');
+        return res.status(401).send({
+            success: false,
+            status: 'error',
+            code: 'Unauthorized: Missing X-API-Key header'
+        });
     }
     
 });
