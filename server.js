@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express(); // Create an Express application
+app.use(express.json()); // Enable JSON parsing middleware
 require('dotenv').config();
 const AWS = require('aws-sdk');
 
@@ -7,8 +8,8 @@ const AWS = require('aws-sdk');
 const sqs = new AWS.SQS({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: "ap-southeast-2",
-    apiVersion: 'v1'
+    region: process.env.SQS_REGION,
+    apiVersion: process.env.SQS_VERSION,
 });
 
 // Sample data (replace with your data source, e.g., database connection)
@@ -27,7 +28,7 @@ app.get('/send/:item', async (req, res) => {
     console.log(item);
 
     const sendMessageParams = {
-        QueueUrl: process.env.QUEUE_URL,
+        QueueUrl: process.env.SQS_QUEUE_URL,
         MessageBody: item,
     };
       
@@ -51,11 +52,11 @@ app.post('/jobs', async (req, res) => {
 
         // Logic to validate the API key (replace with your validation logic)
         if (apiKey === 'my_valid_api_key') {
-            const recipe = req.params.recipe || {};
+            const recipe = req.body.recipe;
             console.log(recipe);
         
             const sendMessageParams = {
-                QueueUrl: process.env.QUEUE_URL,
+                QueueUrl: process.env.SQS_QUEUE_URL,
                 MessageBody: recipe,
             };
               
