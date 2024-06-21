@@ -25,7 +25,7 @@ app.post('/jobs', async (req, res) => {
         const apiKey = req.headers['x-api-key'];
 
         // Logic to validate the API key (replace with your validation logic)
-        if (apiKey === 'my_valid_api_key') {
+        if (apiKey === process.env.API_KEY) {
             const recipe = req.body.recipe;
             console.log(recipe);
         
