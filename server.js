@@ -1,6 +1,6 @@
 const express = require('express');
-const app = express(); // Create an Express application
-app.use(express.json()); // Enable JSON parsing middleware
+const app = express();
+app.use(express.json());
 require('dotenv').config();
 const AWS = require('aws-sdk');
 
@@ -12,11 +12,37 @@ const sqs = new AWS.SQS({
     apiVersion: process.env.SQS_VERSION,
 });
 
-// Sample data (replace with your data source, e.g., database connection)
-const items = [
-  { id: 1, name: 'Item 1' },
-  { id: 2, name: 'Item 2' },
-];
+/**
+ * Continuously checks for and processes messages from an SQS queue.
+ */
+const listen = () => {
+    sqs.receiveMessage({
+        QueueUrl: process.env.SQS_QUEUE_URL,
+        MaxNumberOfMessages: 1, // Get at most one message
+        VisibilityTimeout: 10, // Make the message invisible for 10 seconds while processing
+    })
+    .promise()
+    .then(data => {
+        if (data.Messages && data.Messages.length > 0) {
+            const message = data.Messages[0];
+            const messageBody = message.Body;
+        
+            // Process the message body here (e.g., parse JSON, perform actions)
+            console.log('\nMessage received:', messageBody);
+        
+            // Delete the message from the queue after processing
+            return sqs.deleteMessage({
+                QueueUrl: process.env.SQS_QUEUE_URL,
+                ReceiptHandle: message.ReceiptHandle
+            }).promise();
+        } else {
+            console.log('\nNo messages in the queue');
+        }
+    })
+    .catch(error => {
+        console.error('\nError receiving message:', error);
+    });
+};
 
 app.post('/jobs', async (req, res) => {
 
@@ -27,7 +53,6 @@ app.post('/jobs', async (req, res) => {
         // Logic to validate the API key (replace with your validation logic)
         if (apiKey === process.env.API_KEY) {
             const recipe = req.body.recipe;
-            console.log(recipe);
         
             const sendMessageParams = {
                 QueueUrl: process.env.SQS_QUEUE_URL,
@@ -69,12 +94,25 @@ app.post('/jobs', async (req, res) => {
 });
 
 app.get('/jobs', async (req, res) => {
+
+    // Sample data (replace with your data source, e.g., database connection)
+    const items = [
+        { id: 1, name: 'Item 1' },
+        { id: 2, name: 'Item 2' },
+    ];
+
     console.log('get list of jobs');
     return res.json(items); // Get all items
 });
 
 app.get('/jobs/:id', async (req, res) => {
     console.log('get job details');
+
+    // Sample data (replace with your data source, e.g., database connection)
+    const items = [
+        { id: 1, name: 'Item 1' },
+        { id: 2, name: 'Item 2' },
+    ];
 
     const id = parseInt(req.params.id);
     const item = items.find(item => item.id === id);
@@ -84,11 +122,14 @@ app.get('/jobs/:id', async (req, res) => {
         return res.status(404).send('Item not found'); // Error handling for non-existent item
     }
 });
+  
+// Listen for messages every n seconds
+setInterval(listen, process.env.LISTEN_INTERVAL_MS);
 
 // Port to listen on (default: 3000)
 const port = process.env.PORT || 3000;
 
 // Start the server
 app.listen(port, () => {
-  console.log(`\nServer listening on port ${port}\n`);
+    console.log(`\nServer listening on port ${port}\n`);
 });
