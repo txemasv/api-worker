@@ -3,10 +3,6 @@ const app = express(); // Create an Express application
 require('dotenv').config();
 const AWS = require('aws-sdk');
 
-// Replace these with your actual values
-const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/392174652761/worker-jobs';
-const messageBody = 'hey';
-
 // Create an SQS service object
 const sqs = new AWS.SQS({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -31,20 +27,20 @@ app.get('/send/:item', async (req, res) => {
     console.log(item);
 
     const sendMessageParams = {
-        QueueUrl: queueUrl,
+        QueueUrl: process.env.QUEUE_URL,
         MessageBody: item,
     };
       
     sqs.sendMessage(sendMessageParams, (err, data) => {
         if (err) {
           console.error('\nError sending message to SQS:', err);
-          return res.status(500).json({success: false, code: "error", message: item}); 
+          return res.status(500).json({success: false, code: "fail"});
         } else {
           console.log('\nMessage sent to SQS:', data.MessageId);
+          return res.status(202).json({success: true, code: "queued", item: data.MessageId}); 
         }
     });
     
-    return res.status(202).json({success: true, code: "queued", message: item}); 
   });
 
 app.get('/items', async (req, res) => {
