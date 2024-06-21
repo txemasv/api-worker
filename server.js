@@ -3,6 +3,7 @@ const app = express();
 app.use(express.json());
 require('dotenv').config();
 const AWS = require('aws-sdk');
+const axios = require('axios');
 
 // Create an SQS service object
 const sqs = new AWS.SQS({
@@ -30,15 +31,25 @@ const listen = () => { //Consumer
             const messageBody = JSON.parse(message.Body);
         
             // Process the message body here (e.g., parse JSON, perform actions)
-            console.log('\nMessage received:', messageBody);
+            console.log('\nCONSUMER: Message received:', messageBody);
         
             // Delete the message from the queue after processing
             return sqs.deleteMessage({
                 QueueUrl: process.env.SQS_QUEUE_URL,
                 ReceiptHandle: message.ReceiptHandle
-            }).promise();
+            })
+            .promise()
+            .then(() => {
+                //Notify on provided webhook
+                const url = messageBody.webhook;
+                const result = {
+                    messageId: message.MessageId,
+                    status: "processed",
+                }
+                return axios.post(url, result)
+            });
         } else {
-            console.log('\nNo messages in the queue');
+            console.log('\nCONSUMER: No messages in the queue');
         }
     })
     .catch(error => {
@@ -60,6 +71,15 @@ app.post('/jobs', async (req, res) => { //Producer
         // Logic to validate the API key (replace with your validation logic)
         if (apiKey === process.env.API_KEY) {
             const recipe = req.body.recipe;
+
+            if (!recipe.hasOwnProperty('webhook')) {
+                console.error('\nPRODUCER: No webhook provided');
+                return res.status(500).json({
+                    success: false, 
+                    status: "error",
+                    code: "No webhook provided"
+                });
+            }
         
             const sendMessageParams = {
                 QueueUrl: process.env.SQS_QUEUE_URL,
@@ -68,14 +88,14 @@ app.post('/jobs', async (req, res) => { //Producer
               
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
-                    console.error('\nError sending message to SQS:', err);
+                    console.error('\nPRODUCER: Error sending message to SQS:', err);
                     return res.status(500).json({
                         success: false, 
                         status: "error",
                         code: err.code
                     });
                 } else {
-                    console.log('\nMessage sent to SQS:', data.MessageId);
+                    console.log('\nPRODUCER: Message sent to SQS:', data.MessageId);
                     return res.status(202).json({
                         success: true, 
                         status: "queued", 
@@ -98,6 +118,16 @@ app.post('/jobs', async (req, res) => { //Producer
         });
     }
 });
+
+/**
+ * Endpoint that handles the final result of the operation.
+ * The action started in the producer and was processed by the consumer.
+ * At this stage the consumer has completed the job and notifies the final result to this webhook.
+ */
+app.post('/notifications', async (req, res) => { //Webhook
+    //Do any job you like
+    console.log("\nWEBHOOK", req.body);
+})
   
 // Listen for messages every n seconds
 setInterval(listen, process.env.LISTEN_INTERVAL_MS);
