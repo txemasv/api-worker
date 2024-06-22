@@ -1,10 +1,26 @@
 const express = require('express');
 const app = express();
 app.use(express.json());
+app.use(handleJsonError);
 require('dotenv').config();
 const AWS = require('aws-sdk');
 const axios = require('axios');
 const winston = require('winston');
+
+// Middleware for express and json parser errors
+function handleJsonError(err, req, res, next) {
+    if (err instanceof SyntaxError && err.type === 'entity.parse.failed') {
+        // Handle JSON parsing error
+        logger.error('Invalid JSON format');
+        return res.status(400).send({
+            success: false,
+            status: 'error',
+            code: 'Invalid JSON format'
+        });
+    }
+    // Pass other errors to the next middleware
+    next(err);
+}
 
 // Create logger
 const logger = winston.createLogger({
@@ -17,9 +33,6 @@ const logger = winston.createLogger({
     new winston.transports.Console()
   ]
 });
-
-logger.info('This is an informational message');
-logger.error('This is an error message');
 
 // Create an SQS service object
 const sqs = new AWS.SQS({
@@ -88,6 +101,9 @@ const listen = () => { //Consumer
  * Client acknowledges successful queuing with an appropriate status code and the message ID.
  */
 app.post('/jobs', async (req, res) => { //Producer
+
+    console.log(req.body);
+
     // Accessing the x-api-key header (case-insensitive)
     if (req.headers['x-api-key']) {
         const apiKey = req.headers['x-api-key'];
