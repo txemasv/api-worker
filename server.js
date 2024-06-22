@@ -79,7 +79,16 @@ app.post('/jobs', async (req, res) => { //Producer
                 return res.status(500).json({
                     success: false, 
                     status: "error",
-                    code: "No webhook provided"
+                    code: "No webhook provided in the recipe"
+                });
+            }
+
+            if (!recipe.hasOwnProperty('message')) {
+                console.error('\nPRODUCER: No message provided');
+                return res.status(500).json({
+                    success: false, 
+                    status: "error",
+                    code: "No message provided in the recipe"
                 });
             }
         
