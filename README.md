@@ -27,8 +27,8 @@
 + LISTEN_INTERVAL_MS=5000
 
 # Commands
-+ Run the app in local: npm start
-+ Run the app with nodemon in local: npm run debug
++ Run the app in local: **npm start**
++ Run the app with nodemon in local: **npm run debug**
 
 # Advices
 + Use a tool like postman to do the POST request with the payload
@@ -48,14 +48,12 @@
 
 # Docker
 + You can also run the system in a docker container
-+ The port in docker is 3000
 ## comands
-+ See running containers: docker ps
-+ See build images: docker images
-+ Create the image: docker build -t my-api-worker .
-+ Run the image in a container: docker run -d -p 3000:3000 my-api-worker
-+ Check docker logs: docker logs -f <container_name_or_id>
-+ Stop container: docker stop <container_name_or_id>
-+ Remove container: docker rm <container_name_or_id>
-+ Remove image: docker rmi <image_name_or_id>
-
++ See running containers: **docker ps**
++ See build images: **docker images**
++ Create the image: **docker build -t my-api-worker .**
++ Run the image in a container: **docker run -d -p 3000:3000 my-api-worker**
++ Check docker logs: **docker logs -f <container_name_or_id>**
++ Stop container: **docker stop <container_name_or_id>**
++ Remove container: **docker rm <container_name_or_id>**
++ Remove image: **docker rmi <image_name_or_id>**
