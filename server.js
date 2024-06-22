@@ -116,7 +116,7 @@ app.post('/jobs', async (req, res) => { //Producer
             // Add any validation you consider
             if (!recipe.hasOwnProperty('webhook')) {
                 logger.error('PRODUCER: No webhook provided');
-                return res.status(500).json({
+                return res.status(400).json({
                     success: false, 
                     status: "error",
                     code: "No webhook provided in the recipe"
@@ -125,7 +125,7 @@ app.post('/jobs', async (req, res) => { //Producer
 
             if (!recipe.hasOwnProperty('message')) {
                 logger.error('PRODUCER: No message provided');
-                return res.status(500).json({
+                return res.status(400).json({
                     success: false, 
                     status: "error",
                     code: "No message provided in the recipe"
@@ -140,7 +140,7 @@ app.post('/jobs', async (req, res) => { //Producer
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
                     logger.error('PRODUCER: Error sending message to SQS:', err);
-                    return res.status(500).json({
+                    return res.status(400).json({
                         success: false, 
                         status: "error",
                         code: err.code
