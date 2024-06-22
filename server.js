@@ -4,6 +4,22 @@ app.use(express.json());
 require('dotenv').config();
 const AWS = require('aws-sdk');
 const axios = require('axios');
+const winston = require('winston');
+
+// Create logger
+const logger = winston.createLogger({
+  level: 'info',  // Set the minimum logging level
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console()
+  ]
+});
+
+logger.info('This is an informational message');
+logger.error('This is an error message');
 
 // Create an SQS service object
 const sqs = new AWS.SQS({
@@ -14,7 +30,7 @@ const sqs = new AWS.SQS({
 });
 
 // Create local configuration
-const config = {
+const config = { //API
     sqs_queue_url: process.env.SQS_QUEUE_URL,
     api_key: process.env.API_KEY,
     listen_interval: process.env.LISTEN_INTERVAL_MS || 5000,
@@ -39,7 +55,7 @@ const listen = () => { //Consumer
             const messageBody = JSON.parse(message.Body);
         
             // Process the message body here (e.g., parse JSON, perform actions)
-            console.log('CONSUMER: Message received:', messageBody);
+            logger.info('CONSUMER: Message received:', messageBody);
         
             // Delete the message from the queue after processing
             return sqs.deleteMessage({
@@ -57,11 +73,11 @@ const listen = () => { //Consumer
                 return axios.post(url, result)
             });
         } else {
-            console.log('CONSUMER: No messages in the queue');
+            logger.info('CONSUMER: No messages in the queue');
         }
     })
     .catch(error => {
-        console.error('Error receiving message:', error);
+        logger.error('Error receiving message:', error);
     });
 };
 
@@ -83,7 +99,7 @@ app.post('/jobs', async (req, res) => { //Producer
             // Validate the recipe. 
             // Add any validation you consider
             if (!recipe.hasOwnProperty('webhook')) {
-                console.error('PRODUCER: No webhook provided');
+                logger.error('PRODUCER: No webhook provided');
                 return res.status(500).json({
                     success: false, 
                     status: "error",
@@ -92,7 +108,7 @@ app.post('/jobs', async (req, res) => { //Producer
             }
 
             if (!recipe.hasOwnProperty('message')) {
-                console.error('PRODUCER: No message provided');
+                logger.error('PRODUCER: No message provided');
                 return res.status(500).json({
                     success: false, 
                     status: "error",
@@ -107,14 +123,14 @@ app.post('/jobs', async (req, res) => { //Producer
               
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
-                    console.error('PRODUCER: Error sending message to SQS:', err);
+                    logger.error('PRODUCER: Error sending message to SQS:', err);
                     return res.status(500).json({
                         success: false, 
                         status: "error",
                         code: err.code
                     });
                 } else {
-                    console.log('PRODUCER: Message sent to SQS:', data.MessageId);
+                    logger.info('PRODUCER: Message sent to SQS:', data.MessageId);
                     return res.status(202).json({
                         success: true, 
                         status: "queued", 
@@ -123,6 +139,7 @@ app.post('/jobs', async (req, res) => { //Producer
                 }
             });
         } else {
+            logger.error('PRODUCER: Unauthorized: Invalid X-API-Key');
             return res.status(401).send({
                 success: false,
                 status: 'error',
@@ -130,6 +147,7 @@ app.post('/jobs', async (req, res) => { //Producer
             });
         }
     } else {
+        logger.error('PRODUCER: Unauthorized: Missing X-API-Key header');
         return res.status(401).send({
             success: false,
             status: 'error',
@@ -144,8 +162,10 @@ app.post('/jobs', async (req, res) => { //Producer
  * At this stage the consumer has completed the job and notifies the final result to this webhook.
  */
 app.post('/notifications', async (req, res) => { //Webhook
+    //Do any verifications you need (token, user ...)
+
     //Do any job you like
-    console.log("WEBHOOK", req.body);
+    logger.info("WEBHOOK", req.body);
 })
   
 // Listen for messages every n seconds
