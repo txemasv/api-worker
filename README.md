@@ -50,7 +50,7 @@
 + You can also run the system in a docker container
 ## comands
 + See running containers: **docker ps**
-+ See build images: **docker images**
++ See built images: **docker images**
 + Create the image: **docker build -t my-api-worker .**
 + Run the image in a container: **docker run -d -p 3000:3000 my-api-worker**
 + Check docker logs: **docker logs -f <container_name_or_id>**

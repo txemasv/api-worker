@@ -13,6 +13,14 @@ const sqs = new AWS.SQS({
     apiVersion: process.env.SQS_VERSION,
 });
 
+// Create local configuration
+const config = {
+    sqs_queue_url: process.env.SQS_QUEUE_URL,
+    api_key: process.env.API_KEY,
+    listen_interval: process.env.LISTEN_INTERVAL_MS || 5000,
+    port: process.env.PORT || 3000,
+}
+
 /**
  * Continuously checks for and processes messages from an SQS queue.
  * This function should be executed in background in a differend deployment.
@@ -20,7 +28,7 @@ const sqs = new AWS.SQS({
  */
 const listen = () => { //Consumer
     sqs.receiveMessage({
-        QueueUrl: process.env.SQS_QUEUE_URL,
+        QueueUrl: config.sqs_queue_url,
         MaxNumberOfMessages: 1, // Get at most one message
         VisibilityTimeout: 10, // Make the message invisible for 10 seconds while processing
     })
@@ -31,11 +39,11 @@ const listen = () => { //Consumer
             const messageBody = JSON.parse(message.Body);
         
             // Process the message body here (e.g., parse JSON, perform actions)
-            console.log('\nCONSUMER: Message received:', messageBody);
+            console.log('CONSUMER: Message received:', messageBody);
         
             // Delete the message from the queue after processing
             return sqs.deleteMessage({
-                QueueUrl: process.env.SQS_QUEUE_URL,
+                QueueUrl: config.sqs_queue_url,
                 ReceiptHandle: message.ReceiptHandle
             })
             .promise()
@@ -49,11 +57,11 @@ const listen = () => { //Consumer
                 return axios.post(url, result)
             });
         } else {
-            console.log('\nCONSUMER: No messages in the queue');
+            console.log('CONSUMER: No messages in the queue');
         }
     })
     .catch(error => {
-        console.error('\nError receiving message:', error);
+        console.error('Error receiving message:', error);
     });
 };
 
@@ -69,13 +77,13 @@ app.post('/jobs', async (req, res) => { //Producer
         const apiKey = req.headers['x-api-key'];
 
         // Logic to validate the API key (replace with your validation logic)
-        if (apiKey === process.env.API_KEY) {
+        if (apiKey === config.api_key) {
             const recipe = req.body.recipe;
 
             // Validate the recipe. 
             // Add any validation you consider
             if (!recipe.hasOwnProperty('webhook')) {
-                console.error('\nPRODUCER: No webhook provided');
+                console.error('PRODUCER: No webhook provided');
                 return res.status(500).json({
                     success: false, 
                     status: "error",
@@ -84,7 +92,7 @@ app.post('/jobs', async (req, res) => { //Producer
             }
 
             if (!recipe.hasOwnProperty('message')) {
-                console.error('\nPRODUCER: No message provided');
+                console.error('PRODUCER: No message provided');
                 return res.status(500).json({
                     success: false, 
                     status: "error",
@@ -93,20 +101,20 @@ app.post('/jobs', async (req, res) => { //Producer
             }
         
             const sendMessageParams = {
-                QueueUrl: process.env.SQS_QUEUE_URL,
+                QueueUrl: config.sqs_queue_url,
                 MessageBody: JSON.stringify(recipe),
             };
               
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
-                    console.error('\nPRODUCER: Error sending message to SQS:', err);
+                    console.error('PRODUCER: Error sending message to SQS:', err);
                     return res.status(500).json({
                         success: false, 
                         status: "error",
                         code: err.code
                     });
                 } else {
-                    console.log('\nPRODUCER: Message sent to SQS:', data.MessageId);
+                    console.log('PRODUCER: Message sent to SQS:', data.MessageId);
                     return res.status(202).json({
                         success: true, 
                         status: "queued", 
@@ -137,16 +145,13 @@ app.post('/jobs', async (req, res) => { //Producer
  */
 app.post('/notifications', async (req, res) => { //Webhook
     //Do any job you like
-    console.log("\nWEBHOOK", req.body);
+    console.log("WEBHOOK", req.body);
 })
   
 // Listen for messages every n seconds
-setInterval(listen, process.env.LISTEN_INTERVAL_MS);
-
-// Port to listen on (default: 3000)
-const port = process.env.PORT || 3000;
+setInterval(listen, config.listen_interval);
 
 // Start the server
-app.listen(port, () => {
-    console.log(`\nServer listening on port ${port}\n`);
+app.listen(config.port, () => {
+    console.log(`\nServer listening on port ${config.port}\n`);
 });
