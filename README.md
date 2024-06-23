@@ -1,6 +1,7 @@
 # api-worker
 + API REST to work with SQS and a Worker doing the work in the background with a decoupled architecture.
-+ Producer and Consumer actions are together in this project for learning purposes.
++ The API, Worker and Notifier modules are together in this project for learning purposes.
++ A production infraestructure could be 3 different deployments (ex. 3 docker containers).
 
 # API
 + This function acts as an API endpoint for submitting jobs or tasks to a designated SQS queue.
@@ -30,12 +31,12 @@
 + Run the app with nodemon in local: **npm run debug**
 
 # Advices
-+ Use a tool like postman to do the POST request with the payload
++ Use a tool like postman to do the POST request with the payload.
 
 # Message type
 + Send a POST message to the producer
 + The body has to contain a JSON object recipe.
-+ The recipe has to contain a transaction and a webhook
++ The recipe has to contain a transaction and a webhook.
 ```json
 {
     "recipe": {
@@ -46,7 +47,7 @@
 ```
 
 # Docker
-+ You can also run the system in a docker container
++ You can also run the system in a docker container.
 ## Comands
 + See running containers: **docker ps**
 + See built images: **docker images**
