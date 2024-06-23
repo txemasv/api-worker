@@ -35,7 +35,7 @@
 # Message type
 + Send a POST message to the producer
 + The body has to contain a JSON object recipe.
-+ The recipe has to contain a message and a webhook
++ The recipe has to contain a transaction and a webhook
 ```json
 {
     "recipe": {
