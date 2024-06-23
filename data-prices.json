@@ -2,5 +2,6 @@
     "report" : 10,
     "upload" : 50,
     "transcoding": 100,
-    "conversion": 500
+    "conversion": 500,
+    "check": 0
 }

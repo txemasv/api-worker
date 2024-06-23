@@ -135,14 +135,27 @@ const validateApiKey = async(apiKey) => {
     };
 }
 
+/**
+ * Validates a transaction by checking if it exists in a price list. 
+ * Checks if the user has enough credits to afford it.
+ */
 const validateTransaction = async (transaction, credits) => {
+    // Path to your prices database
+    const filePath = './data-prices.json';
+    let prices;
+    try {
+        // Compare the apiKey
+        const data = fs.readFileSync(filePath, 'utf8');
+        prices = JSON.parse(data);
 
-    //Get prices from a database
-    const prices = {
-        report : 10,
-        upload : 50,
-        transcoding: 100,
-        conversion: 500
+    } catch (error) {
+        logger.error('Error reading or parsing JSON file:', error);
+        return {
+            success:false, 
+            http:500, 
+            code:"Internal server error",
+            status: "error"
+        };
     }
 
     // Check if transaction exists
