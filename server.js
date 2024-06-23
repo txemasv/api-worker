@@ -100,7 +100,22 @@ const listen = () => { //Consumer
  * Checks if an API key is valid
  */
 const validateApiKey = (apiKey) => {
-    return apiKey === config.api_key;
+
+    const data = {
+        "my_valid_api_key_1" : 1000,
+        "my_valid_api_key_2" : 30,
+        "my_valid_api_key_3" : 10,
+        "my_valid_api_key_4" : 5,
+        "my_valid_api_key_5" : 0
+    }
+
+    const user = data[apiKey]
+
+    if(user) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
