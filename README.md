@@ -39,7 +39,7 @@
 ```json
 {
     "recipe": {
-        "message": "hello",
+        "transaction": "report",
         "webhook": "http://localhost:3000/notifications"
     }
 }
