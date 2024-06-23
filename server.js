@@ -281,6 +281,8 @@ app.post('/notifications', async (req, res) => { //Webhook
 
     //Do any job you like
     logger.info("WEBHOOK", req.body);
+
+    return res.status(200).send({success: true});
 })
   
 // Listen for messages every n seconds
