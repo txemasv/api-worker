@@ -102,7 +102,7 @@ const listen = () => { //Consumer
 const validateApiKey = async(apiKey) => {
 
     // Path to your apiKeys database
-    const filePath = './data.json';
+    const filePath = './data-users.json';
 
     try {
         // Compare the apiKey
