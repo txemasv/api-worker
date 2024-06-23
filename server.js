@@ -7,6 +7,7 @@ const AWS = require('aws-sdk');
 const axios = require('axios');
 const winston = require('winston');
 const format = winston.format;
+const fs = require('fs');
 
 // Middleware for express and json parser errors
 function handleJsonError(err, req, res, next) {
@@ -99,23 +100,37 @@ const listen = () => { //Consumer
 /**
  * Checks if an API key is valid
  */
-const validateApiKey = (apiKey) => {
+const validateApiKey = async(apiKey) => {
 
-    const data = {
-        "my_valid_api_key_1" : 1000,
-        "my_valid_api_key_2" : 30,
-        "my_valid_api_key_3" : 10,
-        "my_valid_api_key_4" : 5,
-        "my_valid_api_key_5" : 0
+    // Path to your apiKeys database
+    const filePath = './data.json';
+
+    try {
+        // Compare the apiKey
+        const data = fs.readFileSync(filePath, 'utf8');
+        const jsonData = JSON.parse(data);
+        const user = jsonData[apiKey]
+
+        if(user) {
+            return { success:true };
+        }
+
+    } catch (error) {
+        logger.error('Error reading or parsing JSON file:', error);
+        return {
+            success:false, 
+            http:500, 
+            code:"Internal server error",
+            status: "error"
+        };
     }
 
-    const user = data[apiKey]
-
-    if(user) {
-        return true;
-    }
-
-    return false;
+    return {
+        success:false, 
+        http:401, 
+        code:"Invalid x-api-key",
+        status: "error"
+    };
 }
 
 /**
@@ -130,8 +145,11 @@ app.post('/jobs', async (req, res) => { //Producer
     if (req.headers['x-api-key']) {
         const apiKey = req.headers['x-api-key'];
 
-        // Logic to validate the API key (replace with your validation logic)
-        if (validateApiKey(apiKey)) {
+        // Logic to validate the API key
+        const validKey = await validateApiKey(apiKey);
+
+        // Logic to validate the payload
+        if (validKey.success) {
             const recipe = req.body.recipe;
 
             // Validate the recipe. 
@@ -177,11 +195,11 @@ app.post('/jobs', async (req, res) => { //Producer
                 }
             });
         } else {
-            logger.error('PRODUCER: Unauthorized: Invalid X-API-Key');
-            return res.status(401).send({
+            logger.error(`PRODUCER: ${validKey.code}`);
+            return res.status(validKey.http).send({
                 success: false,
-                status: 'error',
-                code: 'Unauthorized: Invalid X-API-Key'
+                status: validKey.status,
+                code: validKey.code
             });
         }
     } else {
