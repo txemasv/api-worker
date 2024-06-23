@@ -1,4 +1,4 @@
-# Api-Worker
+# api-worker
 + API REST to work with SQS and a Worker doing the work in the background with a decoupled architecture.
 + Producer and Consumer actions are together in this project for learning purposes.
 
