@@ -6,6 +6,7 @@ require('dotenv').config();
 const AWS = require('aws-sdk');
 const axios = require('axios');
 const winston = require('winston');
+const format = winston.format;
 
 // Middleware for express and json parser errors
 function handleJsonError(err, req, res, next) {
@@ -24,10 +25,11 @@ function handleJsonError(err, req, res, next) {
 
 // Create logger
 const logger = winston.createLogger({
-  level: 'info',  // Set the minimum logging level
+  level: 'debug',  // Set the minimum logging level
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.json()
+    winston.format.json(),
+    format.colorize({ all: true })
   ),
   transports: [
     new winston.transports.Console()
@@ -86,7 +88,7 @@ const listen = () => { //Consumer
                 return axios.post(url, result)
             });
         } else {
-            logger.info('CONSUMER: No messages in the queue');
+            logger.debug('CONSUMER: No messages in the queue');
         }
     })
     .catch(error => {
