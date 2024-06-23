@@ -1,7 +1,22 @@
 {
-    "my_valid_api_key_1" : 1000,
-    "my_valid_api_key_2" : 30,
-    "my_valid_api_key_3" : 10,
-    "my_valid_api_key_4" : 5,
-    "my_valid_api_key_5" : 0
+    "my_valid_api_key_1" : {
+        "email" : "jose@email.com",
+        "credits": 3000
+    },
+    "my_valid_api_key_2" : {
+        "email" : "hana@email.com",
+        "credits": 30
+    },
+    "my_valid_api_key_3" : {
+        "email" : "rose@email.com",
+        "credits": 5
+    },
+    "my_valid_api_key_4" : {
+        "email" : "jeff@email.com",
+        "credits": 1
+    },
+    "my_valid_api_key_5" : {
+        "email" : "mary@email.com",
+        "credits": 0
+    }
 }

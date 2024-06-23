@@ -48,7 +48,6 @@ const sqs = new AWS.SQS({
 // Create local configuration
 const config = { //API
     sqs_queue_url: process.env.SQS_QUEUE_URL,
-    api_key: process.env.API_KEY,
     listen_interval: process.env.LISTEN_INTERVAL_MS || 5000,
     port: process.env.PORT || 3000,
 }
@@ -112,7 +111,10 @@ const validateApiKey = async(apiKey) => {
         const user = jsonData[apiKey]
 
         if(user) {
-            return { success:true };
+            return { 
+                success : true,
+                user: user
+            };
         }
 
     } catch (error) {
@@ -131,6 +133,36 @@ const validateApiKey = async(apiKey) => {
         code:"Invalid x-api-key",
         status: "error"
     };
+}
+
+const validateTransaction = async (transaction, credits) => {
+
+    //Get prices from a database
+    const prices = {
+        report : 10,
+        upload : 50,
+        transcoding: 100,
+        conversion: 500
+    }
+
+    // Check if transaction exists
+    if (!prices.hasOwnProperty(transaction)) {
+        logger.error("Transaction invalid");
+        return {
+            success:false,
+            http: 400,
+            code: "Transaction invalid"
+        };
+    }
+
+    // Check if credits are enought
+    if(prices[transaction] > credits) {
+        logger.error("Low balance");
+        return {
+            success:false, 
+            http: 403, code: "Low balance"};
+    }
+    return {success:true};
 }
 
 /**
@@ -152,6 +184,19 @@ app.post('/jobs', async (req, res) => { //Producer
         if (validKey.success) {
             const recipe = req.body.recipe;
 
+            // Logic to validate if user has enough credits for the transaction
+            const transaction = recipe.transaction;
+            const credits = validKey.user.credits;
+            const validTransaction = await validateTransaction(transaction, credits);
+            if(!validTransaction.success) {
+                logger.error(`PRODUCER: ${validTransaction.code}`);
+                return res.status(validTransaction.http).json({
+                    success: false, 
+                    status: "error",
+                    code: validTransaction.code
+                });
+            }
+
             // Validate the recipe. 
             // Add any validation you consider
             if (!recipe.hasOwnProperty('webhook')) {
@@ -163,12 +208,12 @@ app.post('/jobs', async (req, res) => { //Producer
                 });
             }
 
-            if (!recipe.hasOwnProperty('message')) {
-                logger.error('PRODUCER: No message provided');
+            if (!recipe.hasOwnProperty('transaction')) {
+                logger.error('PRODUCER: No transaction provided');
                 return res.status(400).json({
                     success: false, 
                     status: "error",
-                    code: "No message provided in the recipe"
+                    code: "No transaction provided in the recipe"
                 });
             }
         
@@ -176,7 +221,7 @@ app.post('/jobs', async (req, res) => { //Producer
                 QueueUrl: config.sqs_queue_url,
                 MessageBody: JSON.stringify(recipe),
             };
-              
+                
             sqs.sendMessage(sendMessageParams, (err, data) => {
                 if (err) {
                     logger.error('PRODUCER: Error sending message to SQS:', err);
@@ -195,6 +240,7 @@ app.post('/jobs', async (req, res) => { //Producer
                 }
             });
         } else {
+            // Precise messaje from the key validation
             logger.error(`PRODUCER: ${validKey.code}`);
             return res.status(validKey.http).send({
                 success: false,
@@ -203,11 +249,11 @@ app.post('/jobs', async (req, res) => { //Producer
             });
         }
     } else {
-        logger.error('PRODUCER: Unauthorized: Missing X-API-Key header');
+        logger.error('PRODUCER: Missing x-api-key header');
         return res.status(401).send({
             success: false,
             status: 'error',
-            code: 'Unauthorized: Missing X-API-Key header'
+            code: 'Missing x-api-key header'
         });
     }
 });
