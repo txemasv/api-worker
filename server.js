@@ -95,6 +95,13 @@ const listen = () => { //Consumer
 };
 
 /**
+ * Checks if an API key is valid
+ */
+const validateApiKey = (apiKey) => {
+    return apiKey === config.api_key;
+}
+
+/**
  * This function acts as an API endpoint for submitting jobs or tasks to a designated SQS queue.
  * It performs API key validation for security.
  * Sends the job data as a message to the SQS queue for asynchronous processing.
@@ -102,14 +109,12 @@ const listen = () => { //Consumer
  */
 app.post('/jobs', async (req, res) => { //Producer
 
-    console.log(req.body);
-
     // Accessing the x-api-key header (case-insensitive)
     if (req.headers['x-api-key']) {
         const apiKey = req.headers['x-api-key'];
 
         // Logic to validate the API key (replace with your validation logic)
-        if (apiKey === config.api_key) {
+        if (validateApiKey(apiKey)) {
             const recipe = req.body.recipe;
 
             // Validate the recipe. 
