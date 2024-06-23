@@ -2,13 +2,13 @@
 + API REST to work with SQS and a Worker doing the work in the background with a decoupled architecture.
 + Producer and Consumer actions are together in this project for learning purposes.
 
-# Producer
+# API
 + This function acts as an API endpoint for submitting jobs or tasks to a designated SQS queue.
 + It performs API key validation for security.
 + Sends the job data as a message to the SQS queue for asynchronous processing.
 + Client acknowledges successful queuing with an appropriate status code and the message ID.
 
-# Consumer
+# Worker
 + Continuously checks for and processes messages from an SQS queue.
 + This function might be executed in background in a differend deployment.
 
@@ -47,7 +47,7 @@
 
 # Docker
 + You can also run the system in a docker container
-## comands
+## Comands
 + See running containers: **docker ps**
 + See built images: **docker images**
 + Create the image: **docker build -t my-api-worker .**
